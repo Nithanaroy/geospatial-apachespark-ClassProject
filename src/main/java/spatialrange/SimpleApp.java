@@ -18,6 +18,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
 
 public class SimpleApp {
+	@SuppressWarnings("serial")
 	public static void main(String[] args) {
 		// String logFile = "/home/hduser/dev/geospatial-apachespark/README.md";
 		String logFile = "data.txt"; // in my HDFS
