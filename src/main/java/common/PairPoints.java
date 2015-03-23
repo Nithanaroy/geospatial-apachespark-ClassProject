@@ -16,12 +16,16 @@ public class PairPoints implements java.io.Serializable {
 		this.distance = distance;
 	}
 
-	public float getDistance() {
-		return distance;
+	public Point getP1() {
+		return p1;
 	}
 
-	public void setDistance(float distance) {
-		this.distance = distance;
+	public Point getP2() {
+		return p2;
+	}
+
+	public float getDistance() {
+		return distance;
 	}
 
 	public String toString() {

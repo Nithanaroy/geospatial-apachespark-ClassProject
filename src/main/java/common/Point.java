@@ -35,6 +35,10 @@ public class Point implements java.io.Serializable {
 		return (float) Math.sqrt(Math.pow(p1.getXcoordinate() - this.getXcoordinate(), 2)
 				+ Math.pow(p1.getYcoordinate() - this.getYcoordinate(), 2));
 	}
+	
+	public String asSimpleString() {
+		return String.format("%s, %s", xcoordinate, ycoordinate);
+	}
 
 	public String toString() {
 		return String.format("(%s, %s)", xcoordinate, ycoordinate);
