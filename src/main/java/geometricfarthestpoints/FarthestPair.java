@@ -35,18 +35,13 @@ public class FarthestPair {
 	 * @param args
 	 */
 
-	// Some random number which is small enough to ensure the points are at least farther than this value
-	// We will initialize the maximum distance to this and start comparing with all points
-	// Hence the assumption is that 2 points in the input set are at least farther than this value
-	private static float maxDistanceInitalizer = 0;
-
 	public static void main(String[] args) {
 		// String inp1 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 		// String inp2 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 
-		String inp1 = "closest_inp1"; // in my HDFS
+		String inp1 = "closest_inp2"; // in my HDFS
 		String out = "farthest_out_" + Utils.getEpochTick();
 
 		farthestPair(inp1, out);
@@ -87,7 +82,7 @@ public class FarthestPair {
 			JavaPairRDD<String, PairPoints> pairs = pointsRDD.mapToPair(new PairFunction<Point, String, PairPoints>() {
 				public Tuple2<String, PairPoints> call(Point s) {
 					// Compute farthest point to this point
-					float maxDist = maxDistanceInitalizer;
+					float maxDist = 0;
 					float d;
 					Point farthest = s;
 					// TODO: Use Spark's foreach or foreachAsync
