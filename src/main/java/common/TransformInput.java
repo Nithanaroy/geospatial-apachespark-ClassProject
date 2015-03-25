@@ -32,37 +32,37 @@ public class TransformInput {
 		String inputFilePath = args[2];
 		String outputFilePath = args[3];
 
-		switch (token) {
-		case "union":
-			// TODO
-			break;
-		case "hull":
-			// TODO
-			break;
-		case "closest":
-			forClosestPair(inputFilePath, outputFilePath);
-			break;
-		case "farthest":
-			forFarthestPair(inputFilePath, outputFilePath);
-			break;
-		case "range1":
-			forSpatialRangeInp1(inputFilePath, outputFilePath);
-			break;
-		case "range2":
-			forSpatialRangeInp2(inputFilePath, outputFilePath);
-			break;
-		case "join1":
-			// TODO
-			break;
-		case "join2":
-			// TODO
-			break;
-
-		default:
-			System.out.println("Unknown token specified");
-			System.exit(0);
-			break;
-		}
+		// switch (token) {
+		// case "union":
+		// // TODO
+		// break;
+		// case "hull":
+		// // TODO
+		// break;
+		// case "closest":
+		// forClosestPair(inputFilePath, outputFilePath);
+		// break;
+		// case "farthest":
+		// forFarthestPair(inputFilePath, outputFilePath);
+		// break;
+		// case "range1":
+		// forSpatialRangeInp1(inputFilePath, outputFilePath);
+		// break;
+		// case "range2":
+		// forSpatialRangeInp2(inputFilePath, outputFilePath);
+		// break;
+		// case "join1":
+		// // TODO
+		// break;
+		// case "join2":
+		// // TODO
+		// break;
+		//
+		// default:
+		// System.out.println("Unknown token specified");
+		// System.exit(0);
+		// break;
+		// }
 	}
 
 	/**
