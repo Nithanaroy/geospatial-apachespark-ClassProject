@@ -36,8 +36,8 @@ public class SpatialRange {
 		// String inp2 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 
-		String inp1 = "range_inp1"; // in my HDFS
-		String inp2 = "range_inp2"; // in my HDFS
+		String inp1 = "range_inp3"; // in my HDFS
+		String inp2 = "range_inp4"; // in my HDFS
 		String out = "range_out_" + Utils.getEpochTick();
 
 		spatialRange(inp1, inp2, out);
@@ -92,6 +92,10 @@ public class SpatialRange {
 			JavaRDD<Rectangle> rectangles = recStr.map(new Function<String, Rectangle>() {
 				public Rectangle call(String s) {
 					Float[] nums = Utils.splitStringToFloat(s, ",");
+					if (nums.length != 5) {
+						// The input dataset doesnt have ID as first column
+						return new Rectangle(nums[0], nums[1], nums[2], nums[3]);
+					}
 					return new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
 				}
 			});
@@ -125,14 +129,18 @@ public class SpatialRange {
 			if (Settings.D)
 				Utils.Log("Filtered Retangles");
 
-			// Now fetch the IDs of resultant rectangles and save to HDFS
-			resultRectangles.map(new Function<Rectangle, Integer>() {
-				public Integer call(Rectangle r) {
-					return (int) r.getId();
-				}
-			}).saveAsTextFile(ouputFilePath);
+			resultRectangles.repartition(1).saveAsTextFile(ouputFilePath);
 			if (Settings.D)
-				Utils.Log("Saved the IDs of filtered Rectangles");
+				Utils.Log("Saved the filtered Rectangles");
+
+			// Now fetch the IDs of resultant rectangles and save to HDFS
+			// resultRectangles.map(new Function<Rectangle, Integer>() {
+			// public Integer call(Rectangle r) {
+			// return (int) r.getId();
+			// }
+			// }).repartition(1).saveAsTextFile(ouputFilePath);
+			// if (Settings.D)
+			// Utils.Log("Saved the IDs of filtered Rectangles");
 
 			Utils.Log("Done!");
 

@@ -124,7 +124,7 @@ public class FarthestPair {
 					Point p2 = t._2().getP2();
 					return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
 				}
-			}).saveAsTextFile(ouputFilePath);
+			}).repartition(1).saveAsTextFile(ouputFilePath);
 
 			Utils.Log("Done!");
 

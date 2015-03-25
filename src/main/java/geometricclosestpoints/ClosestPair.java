@@ -46,7 +46,7 @@ public class ClosestPair {
 		// String inp2 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 
-		String inp1 = "closest_inp1"; // in my HDFS
+		String inp1 = "closest_inp2"; // in my HDFS
 		String out = "closest_out_" + Utils.getEpochTick();
 
 		closestPair(inp1, out);
@@ -128,7 +128,7 @@ public class ClosestPair {
 					Point p2 = t._2().getP2();
 					return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
 				}
-			}).saveAsTextFile(ouputFilePath);
+			}).repartition(1).saveAsTextFile(ouputFilePath);
 
 			Utils.Log("Done!");
 
