@@ -11,7 +11,6 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
-import common.PairPoints;
 import common.Point;
 import common.Rectangle;
 import common.Settings;
@@ -83,14 +82,24 @@ public class GeometricUnion {
              * Calculated all the points same as rectangle class
              */
 
-            JavaRDD<Point> pointRDD = recStr.map(new Function<String, Point>() {
+            List<Point> pointlist = null;
+            for(Rectangle r : union){
+            	pointlist.add(r.getBottomLeft());
+            	pointlist.add(r.getBottomRight());
+            	pointlist.add(r.getTopLeft());
+            	pointlist.add(r.getTopRight());
+            }
+            
+            
+           /* JavaRDD<Point> pointRDD = recStr.map(new Function<String, Point>() {
                 public Point call(String s) {
                     Float[] nums = Utils.splitStringToFloat(s, ",");
                     return new Point(nums[0], nums[1], nums[2], nums[3]);
 
                 }
-            });
-
+            });*/
+            
+            JavaRDD<Point> pointRDD = sc.parallelize(pointlist);
             List<Point> pointList = pointRDD.collect();
 
             long count = rect.count();
