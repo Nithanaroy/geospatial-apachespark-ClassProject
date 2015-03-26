@@ -7,7 +7,16 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 
+import scala.Tuple2;
+import common.PairPoints;
 import common.Point;
 import common.Settings;
 import common.Utils;
@@ -24,8 +33,8 @@ public class ConvexHull {
 	}
 
 	public static boolean buildHull(String rectanglesFilePath, String ouputFilePath) {
-
-		SparkConf conf = new SparkConf().setAppName("Closest Pair Module");
+	
+		SparkConf conf = new SparkConf().setAppName("Convex Hull Module");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		boolean result = quickHullHelper(rectanglesFilePath, ouputFilePath, sc);
 
@@ -33,7 +42,9 @@ public class ConvexHull {
 		return result;
 	}
 
-	private static boolean quickHullHelper(String pointsFilePath, String ouputFilePath, JavaSparkContext sc) {
+
+	private static boolean quickHullHelper(String pointsFilePath, String ouputFilePath, JavaSparkContext sc)
+		{
 		try {
 			JavaRDD<String> pointStrings = sc.textFile(pointsFilePath);
 			if (Settings.D)
@@ -61,6 +72,7 @@ public class ConvexHull {
 			JavaRDD<List<Point>> pairs = listRDD.map(new Function<List<Point>, List<Point>>() {
 
 				private static final long serialVersionUID = 1L;
+			
 
 				public List<Point> call(List<Point> points) throws Exception {
 					// TODO Auto-generated method stub
@@ -77,13 +89,13 @@ public class ConvexHull {
 							minPoint = i;
 						}
 						if (pxy.getXcoordinate() > maxX) {
-							maxX = pxy.getXcoordinate();
+							maxX = pxy.getYcoordinate();
 							maxPoint = i;
 						}
 					}
-
 					Point A = new Point(points.get(minPoint).getXcoordinate(), points.get(minPoint).getYcoordinate());
 					Point B = new Point(points.get(maxPoint).getXcoordinate(), points.get(maxPoint).getYcoordinate());
+					
 
 					convexHull.add(A);
 					convexHull.add(B);
@@ -102,20 +114,20 @@ public class ConvexHull {
 					}
 
 					hullSet(A, B, rightSet, convexHull);
-					hullSet(A, B, leftSet, convexHull);
+					hullSet(B, A, leftSet, convexHull);
 
 					return convexHull;
-				}
+						}
+				
 			});
 			if (Settings.D)
 				Utils.Log("Convex Hull First" + pairs.first());
 
+			
+			if (Settings.D)
+			Utils.Log("Convex Hull First" + pairs.first());
+			
 			pairs.map(new Function<List<Point>, String>() {
-
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
 
 				public String call(List<Point> t) throws Exception {
 					// TODO Auto-generated method stub
@@ -132,13 +144,15 @@ public class ConvexHull {
 		return false;
 	}
 
-	public static void hullSet(Point A, Point B, ArrayList<Point> set, ArrayList<Point> hull) {
+	
+	public static void hullSet(Point A,Point B,ArrayList<Point> set,ArrayList<Point> hull){
 		int insertPosition = hull.indexOf(B);
-
-		if (set.size() == 0)
+		
+		if(set.size() == 0)
 			return;
-
-		if (set.size() == 1) {
+		
+		if(set.size() == 1)
+		{
 			Point p = set.get(0);
 			set.remove(p);
 			hull.add(insertPosition, p);
@@ -179,5 +193,7 @@ public class ConvexHull {
 
 		hullSet(A, P, leftSetAP, hull);
 		hullSet(P, B, leftSetPB, hull);
+		
 	}
 }
+		

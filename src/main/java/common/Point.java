@@ -37,28 +37,30 @@ public class Point implements java.io.Serializable {
 				+ Math.pow(p1.getYcoordinate() - this.getYcoordinate(), 2));
 	}
 
-	public float getDistance(Point A, Point B, Point P) {
-		float cp1 = (B.xcoordinate - A.xcoordinate) * (P.ycoordinate - A.ycoordinate) - (B.ycoordinate - A.ycoordinate)
-				* (P.xcoordinate - A.xcoordinate);
-
-		if (cp1 > 0)
+	
+	public float getDistance(Point A,Point B,Point P){
+		float cp1 = (B.xcoordinate - A.xcoordinate) * (P.ycoordinate - A.ycoordinate) - (B.ycoordinate - A.ycoordinate) * (P.xcoordinate - A.xcoordinate);
+		
+		if(cp1 > 0)
 			return 1;
-		else if (cp1 == 0)
+		else if(cp1 == 0)
 			return 0;
 		else
 			return -1;
 	}
 
-	public float getDist(Point A, Point B, Point P) {
+	
+	
+	public float getDist(Point A,Point B,Point P){
 		float ABx = B.xcoordinate - A.xcoordinate;
-		float ABy = B.ycoordinate - A.ycoordinate;
-
-		float num = (ABx * (A.ycoordinate - P.ycoordinate)) - (ABy * (A.xcoordinate - P.xcoordinate));
-		if (num < 0)
+		float ABy= B.ycoordinate - A.ycoordinate;
+		
+		float num = (ABx * (A.ycoordinate - P.ycoordinate) )- (ABy * (A.xcoordinate - P.xcoordinate));
+		if ( num < 0)
 			num = -num;
 		return num;
 	}
-
+	
 	public String asSimpleString() {
 		return String.format("%s, %s", xcoordinate, ycoordinate);
 	}
