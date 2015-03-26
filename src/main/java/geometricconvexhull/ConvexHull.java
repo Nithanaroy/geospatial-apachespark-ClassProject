@@ -164,7 +164,7 @@ public class ConvexHull {
 		ArrayList<Point> leftSetAP = new ArrayList<Point>();
 		for(int i = 0; i < set.size() ; i++){
 			Point M = set.get(i);
-			if( A.getDistance(A, B, M) == 1){
+			if( A.getDistance(A, P, M) == 1){
 				leftSetAP.add(M);
 			}
 				
@@ -173,7 +173,7 @@ public class ConvexHull {
 		ArrayList<Point> leftSetPB = new ArrayList<Point>();
 		for(int i = 0; i< set.size();i++){
 			Point M = set.get(i);
-			if(M.getDistance(A, B, M) == 1)
+			if(M.getDistance(P, B, M) == 1)
 				leftSetPB.add(M);
 		}
 		
