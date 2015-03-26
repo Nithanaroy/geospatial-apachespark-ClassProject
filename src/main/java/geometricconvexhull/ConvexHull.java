@@ -18,7 +18,7 @@ public class ConvexHull {
 		// TODO Auto-generated method stub
 
 		String inp = "convexhull_inpl"; // in HDFS
-		String outp = "closest_out_" + Utils.getEpochTick();
+		String outp = "convex_out_" + Utils.getEpochTick();
 		buildHull(inp, outp);
 
 	}
@@ -97,7 +97,7 @@ public class ConvexHull {
 						Point p = points.get(i);
 						if (p.getDistance(A, B, p) == -1)
 							leftSet.add(p);
-						else
+						else if(p.getDistance(A, B, p) == 1)
 							rightSet.add(p);
 					}
 
