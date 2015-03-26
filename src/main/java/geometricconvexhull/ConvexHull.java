@@ -33,7 +33,7 @@ public class ConvexHull {
 	}
 
 	public static boolean buildHull(String rectanglesFilePath, String ouputFilePath) {
-	
+
 		SparkConf conf = new SparkConf().setAppName("Convex Hull Module");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		boolean result = quickHullHelper(rectanglesFilePath, ouputFilePath, sc);
@@ -42,9 +42,7 @@ public class ConvexHull {
 		return result;
 	}
 
-
-	private static boolean quickHullHelper(String pointsFilePath, String ouputFilePath, JavaSparkContext sc)
-		{
+	private static boolean quickHullHelper(String pointsFilePath, String ouputFilePath, JavaSparkContext sc) {
 		try {
 			JavaRDD<String> pointStrings = sc.textFile(pointsFilePath);
 			if (Settings.D)
@@ -72,7 +70,6 @@ public class ConvexHull {
 			JavaRDD<List<Point>> pairs = listRDD.map(new Function<List<Point>, List<Point>>() {
 
 				private static final long serialVersionUID = 1L;
-			
 
 				public List<Point> call(List<Point> points) throws Exception {
 					// TODO Auto-generated method stub
@@ -95,7 +92,6 @@ public class ConvexHull {
 					}
 					Point A = new Point(points.get(minPoint).getXcoordinate(), points.get(minPoint).getYcoordinate());
 					Point B = new Point(points.get(maxPoint).getXcoordinate(), points.get(maxPoint).getYcoordinate());
-					
 
 					convexHull.add(A);
 					convexHull.add(B);
@@ -109,7 +105,7 @@ public class ConvexHull {
 						Point p = points.get(i);
 						if (p.getDistance(A, B, p) == -1)
 							leftSet.add(p);
-						else if(p.getDistance(A, B, p) == 1)
+						else if (p.getDistance(A, B, p) == 1)
 							rightSet.add(p);
 					}
 
@@ -117,21 +113,26 @@ public class ConvexHull {
 					hullSet(B, A, leftSet, convexHull);
 
 					return convexHull;
-						}
-				
+				}
+
 			});
 			if (Settings.D)
 				Utils.Log("Convex Hull First" + pairs.first());
 
-			
 			if (Settings.D)
-			Utils.Log("Convex Hull First" + pairs.first());
-			
-			pairs.map(new Function<List<Point>, String>() {
+				Utils.Log("Convex Hull First" + pairs.first());
 
-				public String call(List<Point> t) throws Exception {
+			pairs.map(new Function<List<Point>, Point>() {
+
+				public JavaRDD<Point> call(List<Point> t) throws Exception {
 					// TODO Auto-generated method stub
-					return t.toString();
+					String str = t.toString(); // [(3,4),(5,6)] => 3,4\n5,6
+					str = str.substring(1, str.length() - 1); // => (3,4),(5,6)
+					String[] splitstr = str.split(","); // Array of (3,4) (5,6)
+					for (int i = 0; i < splitstr.length; i++) {
+						splitstr[i] = splitstr[i].substring(1, splitstr[i].length() - 1) + "\n";
+					}
+					return sc.parallelize(new List<Point>(splitstr));
 				}
 			}).saveAsTextFile(ouputFilePath);
 
@@ -144,15 +145,13 @@ public class ConvexHull {
 		return false;
 	}
 
-	
-	public static void hullSet(Point A,Point B,ArrayList<Point> set,ArrayList<Point> hull){
+	public static void hullSet(Point A, Point B, ArrayList<Point> set, ArrayList<Point> hull) {
 		int insertPosition = hull.indexOf(B);
-		
-		if(set.size() == 0)
+
+		if (set.size() == 0)
 			return;
-		
-		if(set.size() == 1)
-		{
+
+		if (set.size() == 1) {
 			Point p = set.get(0);
 			set.remove(p);
 			hull.add(insertPosition, p);
@@ -193,7 +192,6 @@ public class ConvexHull {
 
 		hullSet(A, P, leftSetAP, hull);
 		hullSet(P, B, leftSetPB, hull);
-		
+
 	}
 }
-		
