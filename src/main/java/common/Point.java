@@ -34,12 +34,5 @@ public class Point implements java.io.Serializable {
 		return String.format("(%s, %s)", xcoordinate, ycoordinate);
 	}
 
-	public Point(float bottomLeftX, float bottomLeftY, float topRightX,
-            float topRightY) {
-        bottomLeft = new Point(bottomLeftX, bottomLeftY);
-        topRight = new Point(topRightX, topRightY);
 
-        bottomRight = new Point(topRightX, bottomLeftY);
-        topLeft = new Point(bottomLeftX, topRightY);
-    }
 }
