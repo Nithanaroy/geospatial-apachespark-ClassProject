@@ -122,17 +122,25 @@ public class ConvexHull {
 			if (Settings.D)
 				Utils.Log("Convex Hull First" + pairs.first());
 
-			pairs.map(new Function<List<Point>, Point>() {
+			pairs.map(new Function<List<Point>, String>() {
 
-				public JavaRDD<Point> call(List<Point> t) throws Exception {
+				public String call(List<Point> t) throws Exception {
 					// TODO Auto-generated method stub
+					String s = "";
 					String str = t.toString(); // [(3,4),(5,6)] => 3,4\n5,6
 					str = str.substring(1, str.length() - 1); // => (3,4),(5,6)
 					String[] splitstr = str.split(","); // Array of (3,4) (5,6)
-					for (int i = 0; i < splitstr.length; i++) {
-						splitstr[i] = splitstr[i].substring(1, splitstr[i].length() - 1) + "\n";
+					for (int i = 0; i < splitstr.length; i = i + 2) {
+						if (i == 0) {
+							s = s + splitstr[i].substring(1, splitstr[i].length() - 1) + ", "
+									+ splitstr[i + 1].substring(2, splitstr[i + 1].length() - 1) + "\n";
+						} else {
+							s = s + splitstr[i].substring(2, splitstr[i].length() - 1) + ", "
+									+ splitstr[i + 1].substring(2, splitstr[i + 1].length() - 1) + "\n";
+
+						}
 					}
-					return sc.parallelize(new List<Point>(splitstr));
+					return s;
 				}
 			}).saveAsTextFile(ouputFilePath);
 
