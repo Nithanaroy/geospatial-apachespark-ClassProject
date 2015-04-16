@@ -11,7 +11,7 @@ public class Utils {
 	 *            Message to log onto the stdout
 	 */
 	public static void Log(String message) {
-		System.out.println("\nL: " + message + "\n");
+		System.out.println("\nL: \n" + message + "\n");
 	}
 
 	/**
