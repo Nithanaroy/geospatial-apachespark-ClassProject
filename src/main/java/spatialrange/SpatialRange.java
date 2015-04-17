@@ -15,6 +15,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.broadcast.Broadcast;
 
 import common.Rectangle;
 import common.Settings;
@@ -41,7 +42,7 @@ public class SpatialRange {
 
 		String inp1 = args[0]; // in my HDFS
 		String inp2 = args[1]; // in my HDFS
-		int partitions = 2;
+		int partitions = -1;
 		try {
 			partitions = Integer.parseInt(args[2]);
 		} catch (Exception e) {
@@ -67,6 +68,8 @@ public class SpatialRange {
 			int partitions) {
 		SparkConf conf = new SparkConf().setAppName("Spatial Range Module");
 		// conf.setMaster("spark://192.168.0.10:7077"); // Required to run from within eclipse
+		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kyro.registrationRequired", "true");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		boolean result = spatialRangeHelper(rectanglesFilePath, queryWindowFilePath, ouputFilePath, partitions, sc);
 
@@ -91,7 +94,13 @@ public class SpatialRange {
 	private static boolean spatialRangeHelper(String rectanglesFilePath, String queryWindowFilePath,
 			String ouputFilePath, int partitions, JavaSparkContext sc) {
 		try {
-			JavaRDD<String> recStr = sc.textFile(rectanglesFilePath); // .repartition(partitions);
+			JavaRDD<String> recStr = null;
+			if (partitions > 0) {
+				recStr = sc.textFile(rectanglesFilePath).repartition(partitions);
+			} else {
+				recStr = sc.textFile(rectanglesFilePath);
+			}
+
 			if (Settings.D)
 				Utils.Log("Fetched Retangles");
 			JavaRDD<String> qwStr = sc.textFile(queryWindowFilePath);
@@ -158,6 +167,11 @@ public class SpatialRange {
 			});
 			if (Settings.D)
 				Utils.Log("Created Query Window Retangle(s) Objects");
+
+			// final Broadcast<Rectangle> query = sc.broadcast(queryWindows.first());
+			// if (Settings.D)
+			// Utils.Log("First Query Window: " + query.value());
+
 			final Rectangle query = queryWindows.first(); // Getting the first as we only deal with one window
 			if (Settings.D)
 				Utils.Log("First Query Window: " + query);
@@ -165,10 +179,12 @@ public class SpatialRange {
 			// Filter out the rectangles which dont fall within the query window
 			JavaRDD<Rectangle> resultRectangles = rectangles.filter(new Function<Rectangle, Boolean>() {
 				public Boolean call(Rectangle r) {
+					// Rectangle queryRect = query.value(); // For Broadcast
+					Rectangle queryRect = query;
 					if (Settings.D)
-						Utils.Log("Checking if [" + r + "] is inside [" + query + "] ");
-					return query.isPointInside(r.getBottomLeft()) && query.isPointInside(r.getBottomRight())
-							&& query.isPointInside(r.getTopLeft()) && query.isPointInside(r.getTopRight());
+						Utils.Log("Checking if [" + r + "] is inside [" + queryRect + "] ");
+					return queryRect.isPointInside(r.getBottomLeft()) && queryRect.isPointInside(r.getBottomRight())
+							&& queryRect.isPointInside(r.getTopLeft()) && queryRect.isPointInside(r.getTopRight());
 				}
 			});
 			if (Settings.D)
