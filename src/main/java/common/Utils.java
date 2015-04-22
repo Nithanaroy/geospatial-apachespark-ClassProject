@@ -28,7 +28,12 @@ public class Utils {
 		Float[] f = new Float[splitString.length];
 
 		for (int i = 0; i < splitString.length; i++) {
-			f[i] = Float.parseFloat(splitString[i]);
+			
+			try {
+				f[i] = Float.parseFloat(splitString[i]);
+			} catch (NumberFormatException e) {
+				// e.printStackTrace();
+			}
 		}
 		return f;
 	}

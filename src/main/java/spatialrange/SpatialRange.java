@@ -108,7 +108,7 @@ public class SpatialRange {
 				Utils.Log("Fetched Query Window(s)");
 
 			// Typecast Rectangles
-			// schema 1: geom,gid,x1,y1,x2,y2,statefp,countyfp,ansicode,hydroid,fullname,mtfcc,aland,awater,intptlat,intptlon
+			// schema 1: geom,gid,x1,y1,x2,y2,statefp,countyfp,ansicode,hydroid,fullname,mtfcc,aland,awater,intptlat,intptlon + 2 unknowns
 			// schema 2: geom,gid,x1,y1,x2,y2,statefp,ansicode,areaid,fullname,mtfcc,aland,awater,intptlat,intptlon
 			// schema 3: id,x1,y1,x2,y2
 			// schema 4: x1,y1,x2,y2
@@ -117,7 +117,7 @@ public class SpatialRange {
 					Rectangle r = null;
 					Float[] nums = Utils.splitStringToFloat(s, ",");
 					switch (nums.length) {
-					case 16:
+					case 18:
 						// schema 1
 						if (Settings.D)
 							Utils.Log("Detected Schema 1");
@@ -147,9 +147,14 @@ public class SpatialRange {
 
 					default:
 						// unknown schema
-						throw new IllegalArgumentException("Unknown Schema");
+						// throw new IllegalArgumentException("Unknown Schema");
+						// Ignore lines when schema is unknown
 					}
 					return r;
+				}
+			}).filter(new Function<Rectangle, Boolean>() {
+				public Boolean call(Rectangle r) {
+					return r != null;
 				}
 			});
 			if (Settings.D)
