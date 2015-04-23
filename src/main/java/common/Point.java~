@@ -33,6 +33,4 @@ public class Point implements java.io.Serializable {
 	public String toString() {
 		return String.format("(%s, %s)", xcoordinate, ycoordinate);
 	}
-
-
 }
