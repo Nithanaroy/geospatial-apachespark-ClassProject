@@ -121,13 +121,12 @@ public class GeometricUnion {
             if (Settings.D)
                 Utils.Log("First Retangle: " + rectangles.first());
 
-            JavaRDD<Rectangle> rect = rectangles;
 
             /*
              * list of all the rectangles
              */
 
-            final List<Rectangle> union = rect.collect();
+            final List<Rectangle> union = rectangles.collect();
 
             /*
              * Calculated all the points same as rectangle class
