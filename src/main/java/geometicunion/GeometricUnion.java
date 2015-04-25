@@ -21,10 +21,10 @@ public class GeometricUnion {
 
     public static void main(String[] args) {
 
-        String inp = "union_inp1"; // in my HDFS
+        String inp = args[0]; // in my HDFS
         int partitions = -1;
 		try {
-			partitions = Integer.parseInt(args[0]);
+			partitions = Integer.parseInt(args[1]);
 		} catch (Exception e) {
 		}
         String out = "union_out_" + Utils.getEpochTick();
@@ -71,11 +71,49 @@ public class GeometricUnion {
             JavaRDD<Rectangle> rectangles = recStr
                     .map(new Function<String, Rectangle>() {
                         public Rectangle call(String s) {
-                            Float[] nums = Utils.splitStringToFloat(s, ",");
-                            return new Rectangle(nums[0], nums[1], nums[2],
-                                    nums[3]);
-                        }
-                    });
+                        	Rectangle r = null;
+        					Float[] nums = Utils.splitStringToFloat(s, ",");
+        					switch (nums.length) {
+        					case 18:
+        						// schema 1
+        						if (Settings.D)
+        							Utils.Log("Detected Schema 1");
+        						r = new Rectangle(nums[2], nums[3], nums[4], nums[5]);
+        						break;
+
+        					case 15:
+        						// schema 2
+        						if (Settings.D)
+        							Utils.Log("Detected Schema 2");
+        						r = new Rectangle(nums[2], nums[3], nums[4], nums[5]);
+        						break;
+
+        					case 5:
+        						// schema 3
+        						if (Settings.D)
+        							Utils.Log("Detected Schema 3");
+        						r = new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
+        						break;
+
+        					case 4:
+        						// schema 4
+        						if (Settings.D)
+        							Utils.Log("Detected Schema 4");
+        						r = new Rectangle(nums[0], nums[1], nums[2], nums[3]);
+        						break;
+
+        					default:
+        						// unknown schema
+        						// throw new IllegalArgumentException("Unknown Schema");
+        						// Ignore lines when schema is unknown
+        					}
+        					return r;
+        				}
+        			}).filter(new Function<Rectangle, Boolean>() {
+        				public Boolean call(Rectangle r) {
+        					return r != null;
+        				}
+        			});
             
 
             if (Settings.D)
