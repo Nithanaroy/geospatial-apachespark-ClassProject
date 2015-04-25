@@ -132,6 +132,8 @@ public class GeometricUnion {
             JavaRDD<Point> resultSet =  sc.parallelize(pointList);
             
             resultSet.saveAsTextFile(ouputFilePath);
+            
+            Utils.Log("Done!");
 
             return true;
         } catch (Exception e) {
