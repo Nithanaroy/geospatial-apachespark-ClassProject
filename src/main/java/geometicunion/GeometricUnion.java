@@ -1,16 +1,13 @@
 package geometicunion;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 
-import scala.Tuple2;
 import common.Point;
 import common.Rectangle;
 import common.Settings;
@@ -25,17 +22,24 @@ public class GeometricUnion {
     public static void main(String[] args) {
 
         String inp = "union_inp1"; // in my HDFS
+        int partitions = -1;
+		try {
+			partitions = Integer.parseInt(args[0]);
+		} catch (Exception e) {
+		}
         String out = "union_out_" + Utils.getEpochTick();
 
-        geometricUnion(inp, out);
+        geometricUnion(inp, out, partitions);
     }
 
     public static boolean geometricUnion(String rectanglesFilePath,
-            String ouputFilePath) {
+            String ouputFilePath, int partition) {
         SparkConf conf = new SparkConf().setAppName("Geometric Union Module");
+        conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kyro.registrationRequired", "true");
         JavaSparkContext sc = new JavaSparkContext(conf);
         boolean result = geometricUnionHelper(rectanglesFilePath,
-                ouputFilePath, sc);
+                ouputFilePath, partition, sc);
 
         sc.close();
         return result;
@@ -43,11 +47,19 @@ public class GeometricUnion {
 
     @SuppressWarnings("serial")
     private static boolean geometricUnionHelper(String rectanglesFilePath,
-            String ouputFilePath, JavaSparkContext sc) {
+            String ouputFilePath, int partition, JavaSparkContext sc) {
         try {
-            JavaRDD<String> recStr = sc.textFile(rectanglesFilePath);
-            if (Settings.D)
-                Utils.Log("Fetched Retangles");
+        	
+        	JavaRDD<String> recStr = null;
+			if (partition > 0) {
+				recStr = sc.textFile(rectanglesFilePath).repartition(partition);
+			} else {
+				recStr = sc.textFile(rectanglesFilePath);
+			}
+
+			if (Settings.D)
+				Utils.Log("Fetched Retangles");
+			
             // JavaRDD<String> qwStr = sc.textFile(queryWindowFilePath);
 
             /*
@@ -64,6 +76,7 @@ public class GeometricUnion {
                                     nums[3]);
                         }
                     });
+            
 
             if (Settings.D)
                 Utils.Log("Created Retangle Objects");
@@ -82,33 +95,25 @@ public class GeometricUnion {
              * Calculated all the points same as rectangle class
              */
 
-            List<Point> pointlist = null;
+            List<Point> pointlist = new ArrayList<Point>();
             for(Rectangle r : union){
             	pointlist.add(r.getBottomLeft());
             	pointlist.add(r.getBottomRight());
             	pointlist.add(r.getTopLeft());
             	pointlist.add(r.getTopRight());
             }
+            if (Settings.D)
+                Utils.Log("Calculate all points in rectangle");
             
-            
-           /* JavaRDD<Point> pointRDD = recStr.map(new Function<String, Point>() {
-                public Point call(String s) {
-                    Float[] nums = Utils.splitStringToFloat(s, ",");
-                    return new Point(nums[0], nums[1], nums[2], nums[3]);
-
-                }
-            });*/
             
             JavaRDD<Point> pointRDD = sc.parallelize(pointlist);
-            List<Point> pointList = pointRDD.collect();
-
-            long count = rect.count();
-
+            final List<Point> pointList = pointRDD.collect();
+            Utils.Log("First Point" + pointRDD.first());
             /*
              * store the point which is inside the intersection of rectangles
              */
 
-            JavaRDD<Point> intersectedRectangles = pointRDD
+            final JavaRDD<Point> intersectedRectangles = pointRDD
                     .filter(new Function<Point, Boolean>() {
                         public Boolean call(Point r) {
                             if (Settings.D)
@@ -116,11 +121,11 @@ public class GeometricUnion {
                                         + union + "] ");
                             for (Rectangle rx : union)
                                 return (rx).isPointInside(r);
-                            return false;
+                            return true;
                         }
                     });
 
-            List<Point> intersectedList = intersectedRectangles.collect();
+            final  List<Point> intersectedList = intersectedRectangles.collect();
 
             pointList.removeAll(intersectedList);
             
