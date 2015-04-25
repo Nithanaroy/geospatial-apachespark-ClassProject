@@ -95,7 +95,7 @@ public class GeometricUnion {
         						r = new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
         						break;
 
-        					case 4:
+        					default:
         						// schema 4
         						if (Settings.D)
         							Utils.Log("Detected Schema 4");
