@@ -22,9 +22,9 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
-
 import common.PairPoints;
 import common.Point;
+import common.Rectangle;
 import common.Settings;
 import common.Utils;
 
@@ -46,44 +46,98 @@ public class ClosestPair {
 		// String inp2 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 
-		String inp1 = "closest_inp1"; // in my HDFS
+		// String inp1 = "closest_inp1"; // in my HDFS
+
+		String inp1 = args[0]; // in my HDFS
+		int partitions = -1;
+		try {
+			partitions = Integer.parseInt(args[1]);
+		} catch (Exception e) {
+		}
 		String out = "closest_out_" + Utils.getEpochTick();
 
-		closestPair(inp1, out);
+		closestPair(inp1, out, partitions);
 
 	}
 
-	public static boolean closestPair(String rectanglesFilePath, String ouputFilePath) {
+	public static boolean closestPair(String rectanglesFilePath, String ouputFilePath, int partitions) {
 		SparkConf conf = new SparkConf().setAppName("Closest Pair Module");
+		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kyro.registrationRequired", "true");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		boolean result = closestPairHelper(rectanglesFilePath, ouputFilePath, sc);
+		boolean result = closestPairHelper(rectanglesFilePath, ouputFilePath, partitions, sc);
 
 		sc.close();
 		return result;
 	}
 
 	@SuppressWarnings("serial")
-	private static boolean closestPairHelper(String pointsFilePath, String ouputFilePath, JavaSparkContext sc) {
+	private static boolean closestPairHelper(String pointsFilePath, String ouputFilePath, int partitions,
+			JavaSparkContext sc) {
 		try {
 			JavaRDD<String> pointStrings = sc.textFile(pointsFilePath);
 			if (Settings.D)
 				Utils.Log("Fetched Points");
 
 			// Typecast Points
-			JavaRDD<Point> pointsRDD = pointStrings.map(new Function<String, Point>() {
+			// schema 1: geom,gid,x1,y1,x2,y2,statefp,countyfp,ansicode,hydroid,fullname,mtfcc,aland,awater,intptlat,intptlon + 2 unknowns
+			// schema 2: geom,gid,x1,y1,x2,y2,statefp,ansicode,areaid,fullname,mtfcc,aland,awater,intptlat,intptlon
+			// schema 3: x1,y1
+			JavaRDD<Point> _pointsRDD = pointStrings.map(new Function<String, Point>() {
 				public Point call(String s) {
+					Point p = null;
 					Float[] nums = Utils.splitStringToFloat(s, ",");
-					return new Point(nums[0], nums[1]);
+					switch (nums.length) {
+					case 18:
+						// schema 1
+						if (Settings.D)
+							Utils.Log("Detected Schema 1");
+						p = new Point(nums[2], nums[3]);
+						break;
+
+					case 15:
+						// schema 2
+						if (Settings.D)
+							Utils.Log("Detected Schema 2");
+						p = new Point(nums[2], nums[3]);
+						break;
+
+					case 2:
+						// schema 3
+						if (Settings.D)
+							Utils.Log("Detected Schema 3");
+						p = new Point(nums[0], nums[1]);
+						break;
+
+					default:
+						// unknown schema
+						// throw new IllegalArgumentException("Unknown Schema");
+						// Ignore lines when schema is unknown
+					}
+					return p;
+				}
+			}).filter(new Function<Point, Boolean>() {
+				public Boolean call(Point p) {
+					return p != null;
 				}
 			}).cache();
 			if (Settings.D)
 				Utils.Log("Created Point Objects");
-			if (Settings.D)
-				Utils.Log("First Point: " + pointsRDD.first());
+			// if (Settings.D)
+			// Utils.Log("First Point: " + pointsRDD.first());
+
+			JavaRDD<Point> pointsRDD = null;
+			if (partitions > 0) {
+				pointsRDD = _pointsRDD.repartition(partitions);
+			} else {
+				pointsRDD = _pointsRDD;
+			}
 
 			// TODO: Avoid collection
 			final List<Point> points = pointsRDD.collect();
 
+			// For every point for its closest point and save the Tuple <p1, p2, d>
+			// Here p1's closest point is p2 and is at a distance, d
 			JavaPairRDD<String, PairPoints> pairs = pointsRDD.mapToPair(new PairFunction<Point, String, PairPoints>() {
 				public Tuple2<String, PairPoints> call(Point s) {
 					// Compute closest point to this point
@@ -103,8 +157,8 @@ public class ClosestPair {
 					return new Tuple2<String, PairPoints>("p", new PairPoints(s, closest, minDist));
 				}
 			});
-			if (Settings.D)
-				Utils.Log("Closest First" + pairs.first());
+			// if (Settings.D)
+			// Utils.Log("Closest First" + pairs.first());
 
 			// TODO: Try to use min function, using PairPointsMinComparator.java
 			// pairs.min(new PairPointsMinComparator().);
