@@ -242,16 +242,16 @@ public class SpatialJoin {
 			// });
 
 			// final List<Rectangle> rect = rectangles.collect();
-			final List<Rectangle> quer = query.collect();
-			// final Broadcast<Rectangle> bquery =
-			// sc.broadcast(query.collect());
+			// final List<Rectangle> quer = query.collect();
+			final Broadcast<List<Rectangle>> bquery = sc.broadcast(query
+					.collect());
 			// Filter out the rectangles which don't fall within the query
 			// window
 
 			JavaRDD<Rectangle> resultRectangles = rectangles
 					.filter(new Function<Rectangle, Boolean>() {
 						public Boolean call(Rectangle r) {
-							// ListRectangle queryRect = quer;
+							List<Rectangle> quer = bquery.getValue();
 							boolean flag = false;
 							for (final Rectangle rxy : quer) {
 								if (Settings.D)
