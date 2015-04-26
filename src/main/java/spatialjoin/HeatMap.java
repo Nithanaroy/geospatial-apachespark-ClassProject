@@ -127,12 +127,12 @@ public class HeatMap {
 
 			JavaPairRDD<Tuple2<Rectangle, Long>, Long> resultRectangles = query.mapToPair(new PairFunction<Tuple2<Rectangle, Long>, Tuple2<Rectangle, Long>, Long>() {
 				public Tuple2<Tuple2<Rectangle, Long>, Long> call(Tuple2<Rectangle, Long> s) {
-					Rectangle r = s._1();
+					Rectangle r = s._1(); // query window
 					List<Tuple2<Rectangle, Long>> rect = brect.getValue();
 					long count = 0;
 					for (final Tuple2<Rectangle, Long> rxy1 : rect) {
-						Rectangle rxy = rxy1._1();
-						if (rxy.isPointInside(r.getBottomLeft()) && rxy.isPointInside(r.getBottomRight()) && rxy.isPointInside(r.getTopLeft()) && rxy.isPointInside(r.getTopRight()))
+						Rectangle rxy = rxy1._1(); // rectangle
+						if (r.isPointInside(rxy.getBottomLeft()) && r.isPointInside(rxy.getBottomRight()) && r.isPointInside(rxy.getTopLeft()) && r.isPointInside(rxy.getTopRight()))
 							count += rxy1._2();
 					}
 					return new Tuple2<Tuple2<Rectangle, Long>, Long>(s, count);
@@ -217,13 +217,6 @@ public class HeatMap {
 				return r1 + r2;
 			}
 		});
-
-		Utils.Log(a.count() + "");
-		
-		Utils.Log(a.take(10) + "");
-		
-		Utils.Log(a.first() + "");
-
 		return a;
 	}
 }
