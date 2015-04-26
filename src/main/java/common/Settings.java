@@ -2,7 +2,6 @@ package common;
 
 /**
  * Contains all settings for the application
- *
  */
 public class Settings {
 
