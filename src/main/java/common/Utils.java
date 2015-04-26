@@ -11,7 +11,7 @@ public class Utils {
 	 *            Message to log onto the stdout
 	 */
 	public static void Log(String message) {
-		System.out.println("\nL: " + message + "\n");
+		System.out.println("\nL: \n" + message + "\n");
 	}
 
 	/**
@@ -28,7 +28,12 @@ public class Utils {
 		Float[] f = new Float[splitString.length];
 
 		for (int i = 0; i < splitString.length; i++) {
-			f[i] = Float.parseFloat(splitString[i]);
+			
+			try {
+				f[i] = Float.parseFloat(splitString[i]);
+			} catch (NumberFormatException e) {
+				// e.printStackTrace();
+			}
 		}
 		return f;
 	}
