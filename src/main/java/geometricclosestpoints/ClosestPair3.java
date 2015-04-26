@@ -1,14 +1,14 @@
 /*
  * Author: Nitin Pasumarthy
  * 
- * A complete String implementation of ClosestPair naive algo. Didnt use Point of PairPoints classes
+ * Avoid using PairPoints class. Hoping to reduce (de-)serialization costs
  * 
  * Pre-Conditions: Hadoop is running using ./start-dfs, Mentioned files paths are valid in HDFS
  * Instructions to run:
  * 1) mvn clean package   // Exports a jar file called geospatial-spark-0.0.1-SNAPSHOT.jar in the target directory
- * 2) ./dev/spark/bin/spark-submit --class "geometricclosestpoints.ClosestPair2" --master local[2] geospatial-apachespark/target/geospatial-spark-0.0.1-SNAPSHOT.jar
+ * 2) ./dev/spark/bin/spark-submit --class "geometricclosestpoints.ClosestPair3" --master local[2] geospatial-apachespark/target/geospatial-spark-0.0.1-SNAPSHOT.jar
  * 
- * Date Created: Apr 25, 2015
+ * Date Created: Apr 26, 2015
  */
 
 package geometricclosestpoints;
@@ -25,10 +25,11 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import common.Point;
 import common.Settings;
 import common.Utils;
 
-public class ClosestPair2 {
+public class ClosestPair3 {
 	/**
 	 * A dummy tester for Closest Pair
 	 * 
@@ -76,31 +77,30 @@ public class ClosestPair2 {
 			// schema 1: geom,gid,x1,y1,x2,y2,statefp,countyfp,ansicode,hydroid,fullname,mtfcc,aland,awater,intptlat,intptlon + 2 unknowns
 			// schema 2: geom,gid,x1,y1,x2,y2,statefp,ansicode,areaid,fullname,mtfcc,aland,awater,intptlat,intptlon
 			// schema 3: x1,y1
-			// Output: "3,5"
-			JavaRDD<String> _pointsRDD = pointStrings.map(new Function<String, String>() {
-				public String call(String s) {
-					String p = null;
-					String[] nums = s.split(",");
+			JavaRDD<Point> _pointsRDD = pointStrings.map(new Function<String, Point>() {
+				public Point call(String s) {
+					Point p = null;
+					Float[] nums = Utils.splitStringToFloat(s, ",");
 					switch (nums.length) {
 					case 18:
 						// schema 1
 						if (Settings.D)
 							Utils.Log("Detected Schema 1");
-						p = nums[2] + "," + nums[3];
+						p = new Point(nums[2], nums[3]);
 						break;
 
 					case 15:
 						// schema 2
 						if (Settings.D)
 							Utils.Log("Detected Schema 2");
-						p = nums[2] + "," + nums[3];
+						p = new Point(nums[2], nums[3]);
 						break;
 
 					case 2:
 						// schema 3
 						if (Settings.D)
 							Utils.Log("Detected Schema 3");
-						p = nums[0] + "," + nums[1];
+						p = new Point(nums[0], nums[1]);
 						break;
 
 					default:
@@ -110,17 +110,17 @@ public class ClosestPair2 {
 					}
 					return p;
 				}
-			}).filter(new Function<String, Boolean>() {
-				public Boolean call(String p) {
+			}).filter(new Function<Point, Boolean>() {
+				public Boolean call(Point p) {
 					return p != null;
 				}
 			}).cache();
 			if (Settings.D)
-				Utils.Log("Extracted (X,Y)");
-			// if (Settings.D)
-			// Utils.Log("First Point: " + pointsRDD.first());
+				Utils.Log("Created Point Objects");
+//			 if (Settings.D)
+//			 Utils.Log("First Point: " + _pointsRDD.first());
 
-			JavaRDD<String> pointsRDD = null;
+			JavaRDD<Point> pointsRDD = null;
 			if (partitions > 0) {
 				pointsRDD = _pointsRDD.repartition(partitions);
 			} else {
@@ -128,25 +128,18 @@ public class ClosestPair2 {
 			}
 
 			// TODO: Avoid collection
-			final List<String> points = pointsRDD.collect();
+			final List<Point> points = pointsRDD.collect();
 
-			// For every point find its closest point and save the Tuple <p1, p2, d>
+			// For every point for its closest point and save the Tuple <p1, p2, d>
 			// Here p1's closest point is p2 and is at a distance, d
-			JavaPairRDD<String, String> pairs = pointsRDD.mapToPair(new PairFunction<String, String, String>() {
-				public Tuple2<String, String> call(String s) {
+			JavaPairRDD<String, String> pairs = pointsRDD.mapToPair(new PairFunction<Point, String, String>() {
+				public Tuple2<String, String> call(Point s) {
 					// Compute closest point to this point
 					float minDist = minDistanceInitalizer, d;
-					String closest = s;
+					Point closest = s;
 					// TODO: Use Spark's foreach or foreachAsync
-					for (String pxy : points) {
-						String[] p1 = s.split(",");
-						String[] p2 = pxy.split(",");
-						float x1 = Float.parseFloat(p1[0]);
-						float y1 = Float.parseFloat(p1[1]);
-						float x2 = Float.parseFloat(p2[0]);
-						float y2 = Float.parseFloat(p2[1]);
-
-						d = (float) Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+					for (Point pxy : points) {
+						d = s.getDistance(pxy);
 						// a point is closest to itself i.e. d = 0, hence we ignore such comparisons
 						// Hence we need to assume that all points in the input are unique
 						if (d > 0 && minDist > d) {
@@ -155,7 +148,7 @@ public class ClosestPair2 {
 						}
 					}
 
-					return new Tuple2<String, String>("p", s + ";" + closest + ";" + minDist);
+					return new Tuple2<String, String>("key", s + ";" + closest + ";" + minDist);
 				}
 			});
 			// if (Settings.D)
@@ -175,19 +168,19 @@ public class ClosestPair2 {
 							return pts2;
 						}
 					});
+//			Tuple2<String, String> ans = minofclosest.first();
+//			if (Settings.D)
+//				Utils.Log("Closest Pair" + ans);
 			
 			minofclosest.saveAsTextFile(outputFilePath);
-			Tuple2<String, String> ans = minofclosest.first();
-			if (Settings.D)
-				Utils.Log("Closest Pair" + ans);
-			//
-			// minofclosest.map(new Function<Tuple2<String, String>, String>() {
-			// public String call(Tuple2<String, String> t) throws Exception {
-			// Point p1 = t._2().getP1();
-			// Point p2 = t._2().getP2();
-			// return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
-			// }
-			// }).saveAsTextFile(outputFilePath);
+
+//			minofclosest.map(new Function<Tuple2<String, PairPoints>, String>() {
+//				public String call(Tuple2<String, PairPoints> t) throws Exception {
+//					Point p1 = t._2().getP1();
+//					Point p2 = t._2().getP2();
+//					return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
+//				}
+//			}).saveAsTextFile(ouputFilePath);
 
 			Utils.Log("Done!");
 
