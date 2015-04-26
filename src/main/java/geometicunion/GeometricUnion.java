@@ -8,6 +8,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 
+import akka.japi.Util;
 import common.Point;
 import common.Rectangle;
 import common.Settings;
@@ -21,13 +22,13 @@ public class GeometricUnion {
 
     public static void main(String[] args) {
 
-        String inp = "hdfs://master:54310/user/hduser/union_inp.csv"; // in my HDFS
+        String inp = args[0]; // in HDFS
         int partitions = -1;
 		try {
 			partitions = Integer.parseInt(args[1]);
 		} catch (Exception e) {
 		}
-        String out = "hdfs://master:54310/user/hduser/union_out_" + Utils.getEpochTick();
+        String out = "union_out_" + Utils.getEpochTick();
 
         geometricUnion(inp, out, partitions);
     }
@@ -95,7 +96,7 @@ public class GeometricUnion {
         						r = new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
         						break;
 
-        					default:
+        					case 4:
         						// schema 4
         						if (Settings.D)
         							Utils.Log("Detected Schema 4");
@@ -103,6 +104,7 @@ public class GeometricUnion {
         						break;
 
         					default:
+
         						// unknown schema
         						// throw new IllegalArgumentException("Unknown Schema");
         						// Ignore lines when schema is unknown
@@ -140,7 +142,7 @@ public class GeometricUnion {
             	pointlist.add(r.getTopRight());
             }
             if (Settings.D)
-                Utils.Log("Calculate all points in rectangle");
+                Utils.Log("Calculate all points in rectangle"+ pointlist.get(2));
             
             
             JavaRDD<Point> pointRDD = sc.parallelize(pointlist);
@@ -163,8 +165,12 @@ public class GeometricUnion {
                     });
 
             final  List<Point> intersectedList = intersectedRectangles.collect();
-
+            /*
+             * Removing the common points from main point RDD 
+             */
             pointList.removeAll(intersectedList);
+            
+            Utils.Log("first point after remove" + pointList.get(1));
             
             JavaRDD<Point> resultSet =  sc.parallelize(pointList);
             
