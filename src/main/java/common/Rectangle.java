@@ -72,6 +72,7 @@ public class Rectangle implements java.io.Serializable {
 	 * The vertices are listed from bottom left corner in anti clockwise direction to top left.
 	 * @return
 	 */
+	 
 	public Float[] getFalttenedVertices() {
 		Float[] f = new Float[8];
 		f[0] = bottomLeft.getXcoordinate();
