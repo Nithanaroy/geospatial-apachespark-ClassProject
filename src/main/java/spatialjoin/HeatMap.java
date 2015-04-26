@@ -165,7 +165,7 @@ public class HeatMap {
 
 	@SuppressWarnings("serial")
 	private static JavaPairRDD<Rectangle, Long> getRectangleObjects(JavaRDD<String> recStr) {
-		return recStr.mapToPair(new PairFunction<String, Rectangle, Long>() {
+		JavaPairRDD<Rectangle, Long> a = recStr.mapToPair(new PairFunction<String, Rectangle, Long>() {
 			public Tuple2<Rectangle, Long> call(String s) {
 				Rectangle r = null;
 				Float[] nums = Utils.splitStringToFloat(s, ",");
@@ -217,5 +217,13 @@ public class HeatMap {
 				return r1 + r2;
 			}
 		});
+
+		Utils.Log(a.count() + "");
+		
+		Utils.Log(a.take(10) + "");
+		
+		Utils.Log(a.first() + "");
+
+		return a;
 	}
 }
