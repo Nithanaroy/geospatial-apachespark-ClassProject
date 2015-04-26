@@ -25,6 +25,7 @@ public class FarthestPair implements Serializable {
 		String inp1 = args[0];
 		String out = args[1]+Utils.getEpochTick();
 		int partitions = -1;
+		
 		try {
 			partitions = Integer.parseInt(args[2]);
 		} catch (Exception e) {
