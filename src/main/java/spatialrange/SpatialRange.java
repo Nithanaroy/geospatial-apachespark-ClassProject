@@ -4,7 +4,7 @@
  * Pre-Conditions: Hadoop is running using ./start-dfs, Mentioned files paths are valid in HDFS
  * Instructions to run:
  * 1) mvn clean package   // Exports a jar file called geospatial-spark-0.0.1-SNAPSHOT.jar in the target directory
- * 2) ./dev/spark/bin/spark-submit --class "spatialrange.SpatialRange" --master local[4] geospatial-apachespark/target/geospatial-spark-0.0.1-SNAPSHOT.jar
+ * 2) ./dev/spark/bin/spark-submit --class "spatialrange.SpatialRange" --master local[4] geospatial-apachespark/target/geospatial-spark-0.0.1-SNAPSHOT.jar inp1 inp2 [4]
  * 
  * Date Created: Mar 13, 2015
  */
@@ -15,6 +15,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.broadcast.Broadcast;
 
 import common.Rectangle;
 import common.Settings;
@@ -36,11 +37,19 @@ public class SpatialRange {
 		// String inp2 =
 		// "/home/hduser/dev/geospatial-apachespark/data/range_inp1";
 
-		String inp1 = "range_inp1"; // in my HDFS
-		String inp2 = "range_inp2"; // in my HDFS
+		// String inp1 = "range_inp1"; // in my HDFS
+		// String inp2 = "range_inp2"; // in my HDFS
+
+		String inp1 = args[0]; // in my HDFS
+		String inp2 = args[1]; // in my HDFS
+		int partitions = -1;
+		try {
+			partitions = Integer.parseInt(args[2]);
+		} catch (Exception e) {
+		}
 		String out = "range_out_" + Utils.getEpochTick();
 
-		spatialRange(inp1, inp2, out);
+		spatialRange(inp1, inp2, out, partitions);
 
 	}
 
@@ -55,10 +64,14 @@ public class SpatialRange {
 	 *            Path in HDFS where to save the output
 	 * @return true if everything is successful, else false
 	 */
-	public static boolean spatialRange(String rectanglesFilePath, String queryWindowFilePath, String ouputFilePath) {
+	public static boolean spatialRange(String rectanglesFilePath, String queryWindowFilePath, String ouputFilePath,
+			int partitions) {
 		SparkConf conf = new SparkConf().setAppName("Spatial Range Module");
+		// conf.setMaster("spark://192.168.0.10:7077"); // Required to run from within eclipse
+		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kyro.registrationRequired", "true");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		boolean result = spatialRangeHelper(rectanglesFilePath, queryWindowFilePath, ouputFilePath, sc);
+		boolean result = spatialRangeHelper(rectanglesFilePath, queryWindowFilePath, ouputFilePath, partitions, sc);
 
 		sc.close();
 		return result;
@@ -79,9 +92,15 @@ public class SpatialRange {
 	 */
 	@SuppressWarnings("serial")
 	private static boolean spatialRangeHelper(String rectanglesFilePath, String queryWindowFilePath,
-			String ouputFilePath, JavaSparkContext sc) {
+			String ouputFilePath, int partitions, JavaSparkContext sc) {
 		try {
-			JavaRDD<String> recStr = sc.textFile(rectanglesFilePath);
+			JavaRDD<String> recStr = null;
+			if (partitions > 0) {
+				recStr = sc.textFile(rectanglesFilePath).repartition(partitions);
+			} else {
+				recStr = sc.textFile(rectanglesFilePath);
+			}
+
 			if (Settings.D)
 				Utils.Log("Fetched Retangles");
 			JavaRDD<String> qwStr = sc.textFile(queryWindowFilePath);
@@ -89,16 +108,60 @@ public class SpatialRange {
 				Utils.Log("Fetched Query Window(s)");
 
 			// Typecast Rectangles
+			// schema 1: geom,gid,x1,y1,x2,y2,statefp,countyfp,ansicode,hydroid,fullname,mtfcc,aland,awater,intptlat,intptlon + 2 unknowns
+			// schema 2: geom,gid,x1,y1,x2,y2,statefp,ansicode,areaid,fullname,mtfcc,aland,awater,intptlat,intptlon
+			// schema 3: id,x1,y1,x2,y2
+			// schema 4: x1,y1,x2,y2
 			JavaRDD<Rectangle> rectangles = recStr.map(new Function<String, Rectangle>() {
 				public Rectangle call(String s) {
+					Rectangle r = null;
 					Float[] nums = Utils.splitStringToFloat(s, ",");
-					return new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
+					switch (nums.length) {
+					case 18:
+						// schema 1
+						if (Settings.D)
+							Utils.Log("Detected Schema 1");
+						r = new Rectangle(nums[2], nums[3], nums[4], nums[5]);
+						break;
+
+					case 15:
+						// schema 2
+						if (Settings.D)
+							Utils.Log("Detected Schema 2");
+						r = new Rectangle(nums[2], nums[3], nums[4], nums[5]);
+						break;
+
+					case 5:
+						// schema 3
+						if (Settings.D)
+							Utils.Log("Detected Schema 3");
+						r = new Rectangle(nums[0], nums[1], nums[2], nums[3], nums[4]);
+						break;
+
+					case 4:
+						// schema 4
+						if (Settings.D)
+							Utils.Log("Detected Schema 4");
+						r = new Rectangle(nums[0], nums[1], nums[2], nums[3]);
+						break;
+
+					default:
+						// unknown schema
+						// throw new IllegalArgumentException("Unknown Schema");
+						// Ignore lines when schema is unknown
+					}
+					return r;
+				}
+			}).filter(new Function<Rectangle, Boolean>() {
+				public Boolean call(Rectangle r) {
+					return r != null;
 				}
 			});
 			if (Settings.D)
 				Utils.Log("Created Retangle Objects");
-			if (Settings.D)
-				Utils.Log("First Retangle: " + rectangles.first());
+			// Requires a new job
+			// if (Settings.D)
+			// Utils.Log("First Retangle: " + rectangles.first());
 
 			// Typecast Query Window from String
 			final JavaRDD<Rectangle> queryWindows = qwStr.map(new Function<String, Rectangle>() {
@@ -109,6 +172,11 @@ public class SpatialRange {
 			});
 			if (Settings.D)
 				Utils.Log("Created Query Window Retangle(s) Objects");
+
+			// final Broadcast<Rectangle> query = sc.broadcast(queryWindows.first());
+			// if (Settings.D)
+			// Utils.Log("First Query Window: " + query.value());
+
 			final Rectangle query = queryWindows.first(); // Getting the first as we only deal with one window
 			if (Settings.D)
 				Utils.Log("First Query Window: " + query);
@@ -116,21 +184,29 @@ public class SpatialRange {
 			// Filter out the rectangles which dont fall within the query window
 			JavaRDD<Rectangle> resultRectangles = rectangles.filter(new Function<Rectangle, Boolean>() {
 				public Boolean call(Rectangle r) {
+					// Rectangle queryRect = query.value(); // For Broadcast
+					Rectangle queryRect = query;
 					if (Settings.D)
-						Utils.Log("Checking if [" + r + "] is inside [" + query + "] ");
-					return query.isPointInside(r.getBottomLeft()) && query.isPointInside(r.getBottomRight())
-							&& query.isPointInside(r.getTopLeft()) && query.isPointInside(r.getTopRight());
+						Utils.Log("Checking if [" + r + "] is inside [" + queryRect + "] ");
+					return queryRect.isPointInside(r.getBottomLeft()) && queryRect.isPointInside(r.getBottomRight())
+							&& queryRect.isPointInside(r.getTopLeft()) && queryRect.isPointInside(r.getTopRight());
 				}
 			});
 			if (Settings.D)
 				Utils.Log("Filtered Retangles");
 
+			String debugString = resultRectangles.toDebugString();
+			if (Settings.D)
+				Utils.Log(debugString);
+
+			resultRectangles.saveAsTextFile(ouputFilePath);
+
 			// Now fetch the IDs of resultant rectangles and save to HDFS
-			resultRectangles.map(new Function<Rectangle, Integer>() {
-				public Integer call(Rectangle r) {
-					return (int) r.getId();
-				}
-			}).saveAsTextFile(ouputFilePath);
+			// resultRectangles.map(new Function<Rectangle, Integer>() {
+			// public Integer call(Rectangle r) {
+			// return (int) r.getId();
+			// }
+			// }).saveAsTextFile(ouputFilePath);
 			if (Settings.D)
 				Utils.Log("Saved the IDs of filtered Rectangles");
 
