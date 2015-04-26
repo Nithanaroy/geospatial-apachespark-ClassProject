@@ -1,9 +1,13 @@
 package common;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 public class Rectangle implements java.io.Serializable {
 
 	/**
-	 * A unique ID that helps during serialization and de-serialization of this class
+	 * A unique ID that helps during serialization and de-serialization of this
+	 * class
 	 */
 	private static final long serialVersionUID = -84411340410615281L;
 
@@ -11,8 +15,7 @@ public class Rectangle implements java.io.Serializable {
 
 	private Point bottomLeft, bottomRight, topRight, topLeft;
 
-	public Rectangle(float bottomLeftX, float bottomLeftY, float topRightX,
-			float topRightY) {
+	public Rectangle(float bottomLeftX, float bottomLeftY, float topRightX, float topRightY) {
 		bottomLeft = new Point(bottomLeftX, bottomLeftY);
 		topRight = new Point(topRightX, topRightY);
 
@@ -20,8 +23,7 @@ public class Rectangle implements java.io.Serializable {
 		topLeft = new Point(bottomLeftX, topRightY);
 	}
 
-	public Rectangle(float id, float bottomLeftX, float bottomLeftY,
-			float topRightX, float topRightY) {
+	public Rectangle(float id, float bottomLeftX, float bottomLeftY, float topRightX, float topRightY) {
 		this.id = id;
 
 		bottomLeft = new Point(bottomLeftX, bottomLeftY);
@@ -49,27 +51,27 @@ public class Rectangle implements java.io.Serializable {
 
 	/**
 	 * Checks if the given point falls inside this rectangle
-	 * @param p Point to check
+	 * 
+	 * @param p
+	 *            Point to check
 	 * @return true if point lies inside, else false
 	 */
 	public boolean isPointInside(Point p) {
 		float px = p.getXcoordinate(), py = p.getYcoordinate();
-		return px > this.bottomLeft.getXcoordinate()
-				&& py > this.bottomLeft.getYcoordinate()
+		return px > this.bottomLeft.getXcoordinate() && py > this.bottomLeft.getYcoordinate()
 
-				&& px < this.bottomRight.getXcoordinate()
-				&& py > this.bottomRight.getYcoordinate()
+		&& px < this.bottomRight.getXcoordinate() && py > this.bottomRight.getYcoordinate()
 
-				&& px < this.topRight.getXcoordinate()
-				&& py < this.topRight.getYcoordinate()
+		&& px < this.topRight.getXcoordinate() && py < this.topRight.getYcoordinate()
 
-				&& px > this.topLeft.getXcoordinate()
-				&& py < this.topLeft.getYcoordinate();
+		&& px > this.topLeft.getXcoordinate() && py < this.topLeft.getYcoordinate();
 	}
 
 	/**
-	 * Collects all vertices of the rectangle and returns in form of an array of floating numbers
-	 * The vertices are listed from bottom left corner in anti clockwise direction to top left.
+	 * Collects all vertices of the rectangle and returns in form of an array of
+	 * floating numbers The vertices are listed from bottom left corner in anti
+	 * clockwise direction to top left.
+	 * 
 	 * @return
 	 */
 	public Float[] getFalttenedVertices() {
@@ -94,5 +96,22 @@ public class Rectangle implements java.io.Serializable {
 
 	public String toString() {
 		return bottomLeft + ", " + bottomRight + ", " + topRight + ", " + topLeft;
+	}
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder(17, 31). // two randomly chosen prime numbers
+				append(bottomLeft.toString()).append(topRight.toString()).toHashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Rectangle))
+			return false;
+		if (obj == this)
+			return true;
+
+		Rectangle rhs = (Rectangle) obj;
+		return new EqualsBuilder().append(bottomLeft.toString(), rhs.bottomLeft.toString()).append(topRight.toString(), rhs.topRight.toString()).isEquals();
 	}
 }

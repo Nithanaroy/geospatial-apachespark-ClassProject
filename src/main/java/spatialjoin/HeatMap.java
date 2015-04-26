@@ -212,11 +212,10 @@ public class HeatMap {
 				return t._1() != null;
 			}
 
+		}).reduceByKey(new Function2<Long, Long, Long>() {
+			public Long call(Long r1, Long r2) throws Exception {
+				return r1 + r2;
+			}
 		});
-//		.reduceByKey(new Function2<Long, Long, Long>() {
-//			public Long call(Long r1, Long r2) throws Exception {
-//				return r1 + r2;
-//			}
-//		});
 	}
 }
