@@ -12,10 +12,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
-import common.PairPoints;
-import common.Point;
 import common.Rectangle;
-import common.RectanglesCount;
 import common.Settings;
 import common.Utils;
 
@@ -166,10 +163,11 @@ public class HeatMap {
 		return false;
 	}
 
+	@SuppressWarnings("serial")
 	private static JavaPairRDD<Rectangle, Long> getRectangleObjects(JavaRDD<String> recStr) {
 		return recStr.mapToPair(new PairFunction<String, Rectangle, Long>() {
 			public Tuple2<Rectangle, Long> call(String s) {
-				Rectangle r;
+				Rectangle r = null;
 				Float[] nums = Utils.splitStringToFloat(s, ",");
 				switch (nums.length) {
 				case 18:
