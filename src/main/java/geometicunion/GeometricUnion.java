@@ -23,12 +23,13 @@ public class GeometricUnion {
     public static void main(String[] args) {
 
         String inp = args[0]; // in HDFS
+        String out = args[1] + Utils.getEpochTick();
         int partitions = -1;
 		try {
-			partitions = Integer.parseInt(args[1]);
+			partitions = Integer.parseInt(args[2]);
 		} catch (Exception e) {
 		}
-        String out = "union_out_" + Utils.getEpochTick();
+        
 
         geometricUnion(inp, out, partitions);
     }
