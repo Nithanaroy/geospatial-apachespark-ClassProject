@@ -15,7 +15,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.broadcast.Broadcast;
 
 import common.Rectangle;
 import common.Settings;
@@ -177,7 +176,7 @@ public class SpatialRange {
 			// if (Settings.D)
 			// Utils.Log("First Query Window: " + query.value());
 
-			final Rectangle query = queryWindows.first(); // Getting the first as we only deal with one window
+			final Rectangle query = queryWindows.collect().get(0); // Getting the first as we only deal with one window
 			if (Settings.D)
 				Utils.Log("First Query Window: " + query);
 
