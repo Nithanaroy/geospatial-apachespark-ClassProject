@@ -115,7 +115,7 @@ public class GeometricUnion {
         				public Boolean call(Rectangle r) {
         					return r != null;
         				}
-        			});
+        			}).cache();
             
 
             if (Settings.D)
