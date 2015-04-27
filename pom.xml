@@ -1,0 +1,44 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.asu.dds</groupId>
+  <artifactId>geospatial-spark</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>GeoSpatial Data Processing</name>
+  <description>Adding six GeoSpatial Data Processing capabilities to Apache Spark
+Team:
+1) Chakravorty, Tanushree
+2) Gandhi, Neel
+3) Joshi, Rutvik
+4) Pasumarthy, Nitin (https://sites.google.com/site/nitinpasumarthy)
+5) Sridharan, Sujata</description>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.apache.spark</groupId>
+  		<artifactId>spark-core_2.10</artifactId>
+  		<version>1.2.0</version>
+  	</dependency>
+  	<dependency>
+    <groupId>com.spatial4j</groupId>
+    <artifactId>spatial4j</artifactId>
+    <version>0.4.1</version>                        
+</dependency>
+
+<dependency>
+    <groupId>com.vividsolutions</groupId>
+    <artifactId>jts</artifactId>
+    <version>1.13</version>                         
+    <exclusions>
+        <exclusion>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
