@@ -20,8 +20,10 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
+
 import common.PairPoints;
 import common.Point;
 import common.Rectangle;
@@ -72,7 +74,7 @@ public class ClosestPair {
 	}
 
 	@SuppressWarnings("serial")
-	private static boolean closestPairHelper(String pointsFilePath, String ouputFilePath, int partitions,
+	private static boolean closestPairHelper(String pointsFilePath, String outputFilePath, int partitions,
 			JavaSparkContext sc) {
 		try {
 			JavaRDD<String> pointStrings = sc.textFile(pointsFilePath);
@@ -126,15 +128,16 @@ public class ClosestPair {
 			// if (Settings.D)
 			// Utils.Log("First Point: " + pointsRDD.first());
 
+			// TODO: Avoid collection
+			final Broadcast<List<Point>> _points = sc.broadcast(_pointsRDD.collect());
+//			final List<Point> points = _pointsRDD.collect();
+			
 			JavaRDD<Point> pointsRDD = null;
 			if (partitions > 0) {
 				pointsRDD = _pointsRDD.repartition(partitions);
 			} else {
 				pointsRDD = _pointsRDD;
 			}
-
-			// TODO: Avoid collection
-			final List<Point> points = pointsRDD.collect();
 
 			// For every point for its closest point and save the Tuple <p1, p2, d>
 			// Here p1's closest point is p2 and is at a distance, d
@@ -144,6 +147,7 @@ public class ClosestPair {
 					float minDist = minDistanceInitalizer, d;
 					Point closest = s;
 					// TODO: Use Spark's foreach or foreachAsync
+					List<Point> points = _points.getValue();
 					for (Point pxy : points) {
 						d = s.getDistance(pxy);
 						// a point is closest to itself i.e. d = 0, hence we ignore such comparisons
@@ -172,17 +176,20 @@ public class ClosestPair {
 							return pts2;
 						}
 					});
-			Tuple2<String, PairPoints> ans = minofclosest.first();
-			if (Settings.D)
-				Utils.Log("Closest Pair" + ans);
-
-			minofclosest.map(new Function<Tuple2<String, PairPoints>, String>() {
-				public String call(Tuple2<String, PairPoints> t) throws Exception {
-					Point p1 = t._2().getP1();
-					Point p2 = t._2().getP2();
-					return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
-				}
-			}).saveAsTextFile(ouputFilePath);
+			
+			minofclosest.saveAsTextFile(outputFilePath);
+			
+			// Tuple2<String, PairPoints> ans = minofclosest.first();
+			// if (Settings.D)
+			// Utils.Log("Closest Pair" + ans);
+			//
+			// minofclosest.map(new Function<Tuple2<String, PairPoints>, String>() {
+			// public String call(Tuple2<String, PairPoints> t) throws Exception {
+			// Point p1 = t._2().getP1();
+			// Point p2 = t._2().getP2();
+			// return p1.asSimpleString() + "\r\n" + p2.asSimpleString();
+			// }
+			// }).saveAsTextFile(ouputFilePath);
 
 			Utils.Log("Done!");
 
